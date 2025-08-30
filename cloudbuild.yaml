@@ -24,6 +24,8 @@ steps:
       - '--allow-unauthenticated'
       # Secret do banco
       - '--set-secrets=DATABASE_URL=harmonia-db-url:latest'
+      # CloudSQL instance
+      - '--add-cloudsql-instances=fiap-so-harmonia:us-central1:harmonia'
       # Service account
       - '--service-account=harmonia@fiap-so-harmonia.iam.gserviceaccount.com'
 
