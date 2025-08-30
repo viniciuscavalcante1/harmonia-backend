@@ -14,7 +14,7 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'harmonia-api' # Nome do seu serviço no Cloud Run.
+      - 'harmonia-api'
       - '--image'
       - 'us-central1-docker.pkg.dev/$PROJECT_ID/harmonia-repo/harmonia-api:$COMMIT_SHA'
       - '--region'
@@ -28,3 +28,7 @@ steps:
 # Lista de imagens
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/harmonia-repo/harmonia-api:$COMMIT_SHA'
+
+# Logging
+options:
+  logging: CLOUD_LOGGING_ONLY
