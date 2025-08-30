@@ -1,21 +1,15 @@
-# Define os passos que o Google Cloud Build executará para o deploy automático.
-# Versão: 1.1
+# cloudbuild.yaml
 steps:
-  # Passo 1: Construir a imagem do contêiner.
-  # Utiliza o Dockerfile otimizado na raiz do projeto.
-  # A imagem é marcada com o ID único do commit ($COMMIT_SHA) para garantir o versionamento.
+  # 1. Constrói a imagem do container com o Dockerfile
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/harmonia-repo/harmonia-api:$COMMIT_SHA', '.']
-    timeout: '1200s' # Timeout de 20 minutos para a construção.
 
-  # Passo 2: Enviar a imagem construída para o Artifact Registry.
-  # O Artifact Registry é o repositório seguro do GCP para guardar as imagens.
+  # 2. Envia a imagem pro Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/harmonia-repo/harmonia-api:$COMMIT_SHA']
 
-  # Passo 3: Fazer o deploy da nova imagem no Google Cloud Run.
-  # Este passo atualiza o serviço existente com a nova versão da imagem.
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # 3. Faz o deploy da imagem no Cloud Run
+  - name: 'gcr.io/[google.com/cloudsdktool/cloud-sdk](https://google.com/cloudsdktool/cloud-sdk)'
     entrypoint: gcloud
     args:
       - 'run'
@@ -27,15 +21,10 @@ steps:
       - 'us-central1'
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated' # Permite acesso público (ideal para a API do protótipo).
-      # Anexa a URL do banco de dados a partir do Secret Manager de forma segura.
+      - '--allow-unauthenticated'
+      # Secret do banco
       - '--set-secrets=DATABASE_URL=harmonia-db-url:latest'
 
-# Lista as imagens que serão criadas para referência nos logs do build.
+# Lista de imagens
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/harmonia-repo/harmonia-api:$COMMIT_SHA'
-
-# Opções de configuração para o build.
-options:
-  logging: CLOUD_LOGGING_ONLY # Envia os logs apenas para o Cloud Logging.
-
