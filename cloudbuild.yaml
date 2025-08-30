@@ -22,8 +22,8 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
-      # Secret do banco
-      - '--set-secrets=DATABASE_URL=harmonia-db-url:latest'
+      # Secret do banco e gemini
+      - '--set-secrets=DATABASE_URL=harmonia-db-url:latest,GEMINI_API_KEY=gemini-api-key:latest'
       # CloudSQL instance
       - '--add-cloudsql-instances=fiap-so-harmonia:us-central1:harmonia'
       # Service account

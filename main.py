@@ -2,6 +2,8 @@ import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, database, schemas
+from google import genai
+
 
 app = FastAPI(title="Harmonia API")
 
@@ -29,6 +31,15 @@ def create_test_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 def read_test_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = db.query(models.UserTest).offset(skip).limit(limit).all()
     return users
+
+@app.post("/coach/ask")
+def ask_coach(question: models.CoachQuestion):
+    client = genai.Client()
+    response = client.models.generate_content(
+        model="gemini-2.5-flash", contents=question.text
+    )
+    print(response.text)
+    return response.text
 
 
 if __name__ == "__main__":

@@ -9,3 +9,5 @@ class UserTest(Base):
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
 
+class CoachQuestion(BaseModel):
+    text: str
