@@ -24,6 +24,8 @@ steps:
       - '--allow-unauthenticated'
       # Secret do banco
       - '--set-secrets=DATABASE_URL=harmonia-db-url:latest'
+      # Service account
+      - '--service-account=harmonia@fiap-so-harmonia.iam.gserviceaccount.com'
 
 # Lista de imagens
 images:
