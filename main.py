@@ -32,6 +32,21 @@ def read_test_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
     users = db.query(models.UserTest).offset(skip).limit(limit).all()
     return users
 
+
+@app.post("/users/login", response_model=schemas.User)
+def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+
+    if db_user:
+        return db_user
+
+    new_user = models.UserTest(name=user.name, email=user.email)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
 @app.post("/coach/ask")
 def ask_coach(question: models.CoachQuestion):
     client = genai.Client()
