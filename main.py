@@ -40,7 +40,7 @@ def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db))
     if db_user:
         return db_user
 
-    new_user = models.UserTest(name=user.name, email=user.email)
+    new_user = models.User(name=user.name, email=user.email)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
