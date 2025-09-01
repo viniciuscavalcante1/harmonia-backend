@@ -92,6 +92,7 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
 
     # Busca os hábitos do usuário para a data de hoje
     today = datetime.date.today()
+    print(today)
     db_habits = db.query(models.Habit).filter(
         models.Habit.user_id == user_id,
         models.Habit.date == today
@@ -106,6 +107,15 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     )
 
     return dashboard_data
+
+
+@app.get("/users/{user_id}", response_model=schemas.User)
+def get_user_details(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return db_user
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
