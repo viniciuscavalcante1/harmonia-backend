@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
+from google.genai.types import GenerateContentConfig
 from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
@@ -49,13 +50,24 @@ def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db))
 
 @app.post("/coach/ask")
 def ask_coach(question: models.CoachQuestion):
-    client = genai.Client()
-    response = client.models.generate_content(
-        model="gemini-2.5-flash", contents=question.text
-    )
-    print(response.text)
-    return response.text
 
+    system_prompt = [
+        "Você é o 'Harmonia', um coach de saúde e bem-estar amigável e motivacional. ",
+        "Seu objetivo é fornecer conselhos práticos, seguros e positivos baseados em princípios de saúde. ",
+        "Nunca dê conselhos médicos diretos ou diagnósticos. Sempre incentive o usuário a consultar um profissional de saúde para questões sérias. ",
+        "Responda de forma concisa e encorajadora."
+    ]
+
+    client = genai.Client()
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash", contents=question.text, config=GenerateContentConfig(
+            system_instruction=system_prompt
+        ))
+        return {"answer": response.text}
+    except Exception as e:
+        print(f"erro: {e}")
+        raise HTTPException(status_code=500, detail="Ocorreu um erro ao processar sua pergunta.")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
