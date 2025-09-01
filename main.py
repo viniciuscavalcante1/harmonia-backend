@@ -96,6 +96,26 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     return dashboard_data
 
 
+@app.post("/users/{user_id}/habits", response_model=schemas.Habit)
+def create_habit_for_user(user_id: int, habit: schemas.HabitCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    db_habit = models.Habit(
+        name=habit.name,
+        icon=habit.icon,
+        date=datetime.date.today(),
+        is_completed=False,
+        user_id=user_id
+    )
+
+    db.add(db_habit)
+    db.commit()
+    db.refresh(db_habit)
+    return db_habit
+
+
 @app.get("/users/{user_id}", response_model=schemas.User)
 def get_user_details(user_id: int, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()

@@ -10,7 +10,9 @@ class HabitBase(BaseModel):
     is_completed: bool
 
 class HabitCreate(HabitBase):
-    pass
+    name: str
+    icon: str
+
 
 class Habit(HabitBase):
     id: int
