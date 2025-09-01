@@ -9,7 +9,7 @@ class HabitBase(BaseModel):
     date: date
     is_completed: bool
 
-class HabitCreate(HabitBase):
+class HabitCreate(BaseModel):
     name: str
     icon: str
 
