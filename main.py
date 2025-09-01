@@ -20,7 +20,7 @@ def read_root():
     return {"message": "Health check: success."}
 
 
-@app.post("/test_users/", response_model=schemas.User, status_code=201)
+@app.post("/test_users/", response_model=schemas.UserBase, status_code=201)
 def create_test_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = models.UserTest(name=user.name, email=user.email)
     db.add(db_user)
@@ -28,13 +28,13 @@ def create_test_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@app.get("/test_users/", response_model=list[schemas.User])
+@app.get("/test_users/", response_model=list[schemas.UserBase])
 def read_test_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = db.query(models.UserTest).offset(skip).limit(limit).all()
     return users
 
 
-@app.post("/users/login", response_model=schemas.User)
+@app.post("/users/login", response_model=schemas.UserBase)
 def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
@@ -46,6 +46,18 @@ def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db))
     db.commit()
     db.refresh(new_user)
     return new_user
+
+
+@app.post("/habits/{habit_id}/toggle", response_model=schemas.Habit)
+def toggle_habit_completion(habit_id: int, db: Session = Depends(get_db)):
+    db_habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
+    if not db_habit:
+        raise HTTPException(status_code=404, detail="Hábito não encontrado")
+
+    db_habit.is_completed = not db_habit.is_completed
+    db.commit()
+    db.refresh(db_habit)
+    return db_habit
 
 
 @app.post("/coach/ask")
