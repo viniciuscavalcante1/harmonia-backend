@@ -3,7 +3,7 @@ import datetime
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from google.genai.types import GenerateContentConfig
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app import models, database, schemas
 from google import genai
 
@@ -22,9 +22,10 @@ def read_root():
     return {"message": "Health check: success."}
 
 
-@app.post("/users/login", response_model=schemas.UserBase)
+@app.post("/users/login", response_model=schemas.User)
 def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    db_user = db.query(models.User).options(joinedload(models.User.habits)).filter(
+        models.User.email == user.email).first()
 
     if db_user:
         return db_user
