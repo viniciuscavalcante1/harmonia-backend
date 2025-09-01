@@ -1,7 +1,7 @@
 # app/schemas.py
 from pydantic import BaseModel, EmailStr
 from datetime import date
-
+from typing import List
 
 class HabitBase(BaseModel):
     name: str
@@ -9,10 +9,8 @@ class HabitBase(BaseModel):
     date: date
     is_completed: bool
 
-
 class HabitCreate(HabitBase):
     pass
-
 
 class Habit(HabitBase):
     id: int
@@ -26,14 +24,25 @@ class UserBase(BaseModel):
     name: str
     email: EmailStr
 
-
 class UserCreate(UserBase):
     pass
 
-
 class User(UserBase):
     id: int
-    habits: list[Habit] = []
+    habits: List[Habit] = []
 
     class Config:
         from_attributes = True
+
+class ActivityData(BaseModel):
+    steps: int
+
+class SleepData(BaseModel):
+    duration: str
+
+class DashboardDataResponse(BaseModel):
+    userName: str
+    activity: ActivityData
+    sleep: SleepData
+    dailyInsight: str
+    habits: List[Habit] = []

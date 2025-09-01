@@ -1,3 +1,5 @@
+import datetime
+
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from google.genai.types import GenerateContentConfig
@@ -80,6 +82,30 @@ def ask_coach(question: models.CoachQuestion):
     except Exception as e:
         print(f"erro: {e}")
         raise HTTPException(status_code=500, detail="Ocorreu um erro ao processar sua pergunta.")
+
+
+@app.get("/dashboard/user/{user_id}", response_model=schemas.DashboardDataResponse)
+def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # Busca os hábitos do usuário para a data de hoje
+    today = datetime.date.today()
+    db_habits = db.query(models.Habit).filter(
+        models.Habit.user_id == user_id,
+        models.Habit.date == today
+    ).all()
+
+    dashboard_data = schemas.DashboardDataResponse(
+        userName=db_user.name.split(" ")[0],
+        activity=schemas.ActivityData(steps=7890),
+        sleep=schemas.SleepData(duration="5h42min"),
+        dailyInsight="Notei que nos dias em que você atinge sua meta de passos, seu sono profundo melhora em 15%.",
+        habits=db_habits
+    )
+
+    return dashboard_data
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
