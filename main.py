@@ -56,7 +56,7 @@ def toggle_habit_completion(habit_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/coach/ask")
-def ask_coach(question: models.CoachQuestion):
+def ask_coach(request: schemas.CoachRequest):
     system_prompt = [
         "Você é o 'Harmonia', um coach de saúde e bem-estar amigável e motivacional. ",
         "Seu objetivo é fornecer conselhos práticos, seguros e positivos baseados em princípios de saúde. ",
@@ -64,12 +64,21 @@ def ask_coach(question: models.CoachQuestion):
         "Responda de forma concisa e encorajadora.",
     ]
 
+    conversation_history = []
+    for message in request.history:
+        role = "user" if message.role == "user" else "model"
+        conversation_history.append({"role": role, "parts": [message.content]})
+
     client = genai.Client()
+
     try:
-        response = client.models.generate_content(
+        chat = client.chats.create(
             model="gemini-2.5-flash",
-            contents=question.text,
             config=GenerateContentConfig(system_instruction=system_prompt),
+            history=conversation_history,
+        )
+        response = chat.send_message(
+            message=request.current_message,
         )
         return {"answer": response.text}
     except Exception as e:

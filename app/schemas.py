@@ -55,3 +55,14 @@ class DashboardDataResponse(BaseModel):
     sleep: SleepData
     dailyInsight: str
     habits: List[Habit] = []
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class CoachRequest(BaseModel):
+    current_message: str
+    history: List[ChatMessage] = []
+    user_id: int
