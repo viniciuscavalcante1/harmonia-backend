@@ -174,7 +174,7 @@ def suggest_habits(request: SuggestionRequest):
     prompt = f"""
     Sugira 3 hábitos simples e eficazes para alguém cujo principal objetivo de saúde é '{request.objective}'.
     Para cada hábito, sugira também um ícone do 'SF Symbols' da Apple.
-    Retorne a resposta como um array JSON válido, no seguinte formato:
+    Retorne a resposta como um array JSON válido, sem nenhum texto antes nem depois, como no seguinte formato:
     [
         {{"name": "Nome do Hábito 1", "icon": "icone.do.sf.symbol"}},
         {{"name": "Nome do Hábito 2", "icon": "outro.icone"}},
@@ -184,7 +184,9 @@ def suggest_habits(request: SuggestionRequest):
     try:
         client = genai.Client()
         response = client.models.generate_content(
-            config=GenerateContentConfig(system_instruction=system_prompt),
+            config=GenerateContentConfig(
+                system_instruction=system_prompt, response_mime_type="application/json"
+            ),
             model="gemini-2.5-flash",
             contents=prompt,
         )
