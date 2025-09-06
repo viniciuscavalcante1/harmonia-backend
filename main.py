@@ -46,16 +46,70 @@ def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db))
     return new_user
 
 
-@app.post("/habits/{habit_id}/toggle", response_model=schemas.Habit)
-def toggle_habit_completion(habit_id: int, db: Session = Depends(get_db)):
-    db_habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
-    if not db_habit:
-        raise HTTPException(status_code=404, detail="Hábito não encontrado")
+@app.post("/habits/{habit_def_id}/toggle", response_model=schemas.HabitStatus)
+def toggle_habit_completion(habit_def_id: int, date_str: str, db: Session = Depends(get_db)):
+    try:
+        target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de data inválido. Use AAAA-MM-DD.")
 
-    db_habit.is_completed = not db_habit.is_completed
+    habit_def = db.query(models.HabitDefinition).filter(models.HabitDefinition.id == habit_def_id).first()
+    if not habit_def:
+        raise HTTPException(status_code=404, detail="Definição de hábito não encontrada")
+
+    completion = db.query(models.HabitCompletion).filter(
+        models.HabitCompletion.habit_id == habit_def_id,
+        models.HabitCompletion.date == target_date
+    ).first()
+
+    if completion:
+        db.delete(completion)
+        is_completed_now = False
+    else:
+        new_completion = models.HabitCompletion(habit_id=habit_def_id, date=target_date)
+        db.add(new_completion)
+        is_completed_now = True
+
     db.commit()
-    db.refresh(db_habit)
-    return db_habit
+
+    return schemas.HabitStatus(
+        id=habit_def.id,
+        user_id=habit_def.user_id,
+        name=habit_def.name,
+        icon=habit_def.icon,
+        is_completed=is_completed_now
+    )
+
+
+@app.get("/habits/{habit_def_id}/history", response_model=schemas.HabitHistory)
+def get_habit_history(habit_def_id: int, db: Session = Depends(get_db)):
+    completions_query = (
+        db.query(models.HabitCompletion)
+        .filter(models.HabitCompletion.habit_id == habit_def_id)
+        .order_by(models.HabitCompletion.date.desc())
+        .all()
+    )
+
+    completed_dates = {completion.date for completion in completions_query}
+
+    if not completed_dates:
+        return schemas.HabitHistory(current_streak=0, completed_dates=[])
+
+    current_streak = 0
+    today = datetime.date.today()
+    check_date = today
+
+    if check_date not in completed_dates:
+        check_date = today - datetime.timedelta(days=1)
+
+    while check_date in completed_dates:
+        current_streak += 1
+        check_date -= datetime.timedelta(days=1)
+
+    return schemas.HabitHistory(
+        current_streak=current_streak,
+        completed_dates=sorted(list(completed_dates), reverse=True)  # Retorna as datas ordenadas
+    )
 
 
 @app.post("/coach/ask")
@@ -94,50 +148,56 @@ def ask_coach(request: schemas.CoachRequest):
 
 
 @app.get("/dashboard/user/{user_id}", response_model=schemas.DashboardDataResponse)
-def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
+def get_dashboard_data(user_id: int, date_str: str, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-    today = datetime.date.today()
-    print(today)
-    db_habits = (
-        db.query(models.Habit)
-        .filter(models.Habit.user_id == user_id, models.Habit.date == today)
-        .all()
-    )
+    try:
+        target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de data inválido. Use AAAA-MM-DD.")
+    habit_definitions = db.query(models.HabitDefinition).filter(models.HabitDefinition.user_id == user_id).all()
 
-    dashboard_data = schemas.DashboardDataResponse(
+    completed_today_ids = {
+        c.habit_id for c in db.query(models.HabitCompletion).filter(
+            models.HabitCompletion.date == target_date,
+            models.HabitCompletion.definition.has(user_id=user_id)
+        ).all()
+    }
+
+    habits_status = [
+        schemas.HabitStatus(
+            id=definition.id,
+            user_id=definition.user_id,
+            name=definition.name,
+            icon=definition.icon,
+            is_completed=(definition.id in completed_today_ids)
+        ) for definition in habit_definitions
+    ]
+
+    return schemas.DashboardDataResponse(
         userName=db_user.name.split(" ")[0],
         activity=schemas.ActivityData(steps=7890),
         sleep=schemas.SleepData(duration="5h42min"),
-        dailyInsight="Notei que nos dias em que você atinge sua meta de passos, seu sono profundo melhora em 15%.",
-        habits=db_habits,
+        dailyInsight="Continue assim! A consistência é a chave para o sucesso.",
+        habits=habits_status,
     )
 
-    return dashboard_data
 
-
-@app.post("/users/{user_id}/habits", response_model=schemas.Habit)
-def create_habit_for_user(
-    user_id: int, habit: schemas.HabitCreate, db: Session = Depends(get_db)
+@app.post("/users/{user_id}/habits", response_model=schemas.HabitDefinition)
+def create_habit_definition(
+    user_id: int, habit: schemas.HabitDefinitionCreate, db: Session = Depends(get_db)
 ):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-    db_habit = models.Habit(
-        name=habit.name,
-        icon=habit.icon,
-        date=datetime.date.today(),
-        is_completed=False,
-        user_id=user_id,
-    )
-
-    db.add(db_habit)
+    db_habit_def = models.HabitDefinition(**habit.model_dump(), user_id=user_id)
+    db.add(db_habit_def)
     db.commit()
-    db.refresh(db_habit)
-    return db_habit
+    db.refresh(db_habit_def)
+    return db_habit_def
 
 
 @app.get("/users/{user_id}", response_model=schemas.User)

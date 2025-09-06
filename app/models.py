@@ -51,5 +51,26 @@ class Habit(Base):
     owner = relationship("User", back_populates="habits")
 
 
+class HabitDefinition(Base):
+    __tablename__ = "habit_definitions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    icon = Column(String, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    owner = relationship("User", back_populates="habit_definitions")
+    completions = relationship("HabitCompletion", back_populates="definition", cascade="all, delete-orphan")
+
+
+class HabitCompletion(Base):
+    __tablename__ = "habit_completions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    habit_id = Column(Integer, ForeignKey("habit_definitions.id"))
+    date = Column(Date, index=True)
+
+    definition = relationship("HabitDefinition", back_populates="completions")
+
 class CoachQuestion(BaseModel):
     text: str

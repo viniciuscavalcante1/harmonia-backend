@@ -16,6 +16,29 @@ class HabitCreate(BaseModel):
     icon: str
 
 
+class HabitDefinitionCreate(BaseModel):
+    name: str
+    icon: str
+
+
+class HabitDefinition(HabitDefinitionCreate):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class HabitStatus(HabitDefinition):
+    is_completed: bool
+
+
+class HabitHistory(BaseModel):
+    current_streak: int
+    completed_dates: List[date]
+
+
+
 class Habit(HabitBase):
     id: int
     user_id: int
@@ -35,7 +58,6 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
-    habits: List[Habit] = []
 
     class Config:
         from_attributes = True
@@ -54,7 +76,7 @@ class DashboardDataResponse(BaseModel):
     activity: ActivityData
     sleep: SleepData
     dailyInsight: str
-    habits: List[Habit] = []
+    habits: List[HabitStatus] = []
 
 
 class ChatMessage(BaseModel):
