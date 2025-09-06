@@ -66,3 +66,16 @@ class CoachRequest(BaseModel):
     current_message: str
     history: List[ChatMessage] = []
     user_id: int
+
+
+class UserUpdate(BaseModel):
+    main_goal: str
+
+
+class SuggestionRequest(BaseModel):
+    objective: str
+
+
+class HabitSuggestion(BaseModel):
+    name: str
+    icon: str

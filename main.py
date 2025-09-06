@@ -1,4 +1,6 @@
 import datetime
+import json
+from typing import List
 
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
@@ -7,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app import models, database, schemas
 from google import genai
 
+from app.schemas import HabitSuggestion, SuggestionRequest
 
 app = FastAPI(title="Harmonia API")
 
@@ -96,7 +99,6 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     if not db_user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-    # Busca os hábitos do usuário para a data de hoje
     today = datetime.date.today()
     print(today)
     db_habits = (
@@ -144,6 +146,55 @@ def get_user_details(user_id: int, db: Session = Depends(get_db)):
     if not db_user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return db_user
+
+
+@app.patch("/users/{user_id}", response_model=schemas.User)
+def update_user_goal(
+    user_id: int, user_update: schemas.UserUpdate, db: Session = Depends(get_db)
+):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    db_user.main_goal = user_update.main_goal
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+@app.post("/onboarding/suggest-habits", response_model=List[HabitSuggestion])
+def suggest_habits(request: SuggestionRequest):
+    system_prompt = [
+        "Você é o 'Harmonia', um coach de saúde e bem-estar amigável e motivacional. ",
+        "Seu objetivo é fornecer conselhos práticos, seguros e positivos baseados em princípios de saúde. ",
+        "Nunca dê conselhos médicos diretos ou diagnósticos. Sempre incentive o usuário a consultar um profissional de saúde para questões sérias. ",
+        "Responda de forma concisa e encorajadora.",
+    ]
+
+    prompt = f"""
+    Sugira 3 hábitos simples e eficazes para alguém cujo principal objetivo de saúde é '{request.objective}'.
+    Para cada hábito, sugira também um ícone do 'SF Symbols' da Apple.
+    Retorne a resposta como um array JSON válido, no seguinte formato:
+    [
+        {{"name": "Nome do Hábito 1", "icon": "icone.do.sf.symbol"}},
+        {{"name": "Nome do Hábito 2", "icon": "outro.icone"}},
+        {{"name": "Nome do Hábito 3", "icon": "mais.um.icone"}}
+    ]
+    """
+    try:
+        client = genai.Client()
+        response = client.models.generate_content(
+            config=GenerateContentConfig(system_instruction=system_prompt),
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        suggested_habits_json = json.loads(response.result.strip("```json\n"))
+        return suggested_habits_json
+    except Exception as e:
+        print(f"Erro ao sugerir hábitos: {e}")
+        raise HTTPException(
+            status_code=500, detail="Não foi possível gerar sugestões de hábitos."
+        )
 
 
 if __name__ == "__main__":
