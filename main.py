@@ -67,16 +67,14 @@ def ask_coach(request: schemas.CoachRequest):
     conversation_history = []
     for message in request.history:
         role = "user" if message.role == "user" else "model"
-        conversation_history.append({"role": role, "parts": [message.content]})
+        conversation_history.append({'role': role, 'parts': [{'text': message.content}]})
 
     client = genai.Client()
 
     try:
-        chat = client.chats.create(
-            model="gemini-2.5-flash",
-            config=GenerateContentConfig(system_instruction=system_prompt),
-            history=conversation_history,
-        )
+        chat = client.chats.create(model="gemini-2.5-flash",
+                                   config=GenerateContentConfig(system_instruction=system_prompt),
+                                   history=conversation_history)
         response = chat.send_message(
             message=request.current_message,
         )
