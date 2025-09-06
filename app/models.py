@@ -1,8 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, Date, Boolean, Float, func, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .database import Base
+
 
 class UserTest(Base):
     __tablename__ = "test_users"
@@ -10,6 +11,7 @@ class UserTest(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -30,7 +32,6 @@ class User(Base):
     has_apple_watch = Column(Boolean, default=False)
 
     habits = relationship("Habit", back_populates="owner")
-
 
     # activities = relationship("PhysicalActivity", back_populates="user")
     # sleep_records = relationship("SleepRecord", back_populates="user")

@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/harmonia")
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://user:password@localhost/harmonia"
+)
 if not SQLALCHEMY_DATABASE_URL:
     raise Exception("DATABASE_URL is not set")
 
