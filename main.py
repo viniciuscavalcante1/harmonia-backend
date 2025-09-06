@@ -188,8 +188,8 @@ def suggest_habits(request: SuggestionRequest):
             model="gemini-2.5-flash",
             contents=prompt,
         )
-        suggested_habits_json = json.loads(response.result.strip("```json\n"))
-        return suggested_habits_json
+        suggested_habits = json.loads(response.text)
+        return suggested_habits
     except Exception as e:
         print(f"Erro ao sugerir hábitos: {e}")
         raise HTTPException(
