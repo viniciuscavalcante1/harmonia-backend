@@ -31,7 +31,9 @@ class User(Base):
     plan_type = Column(String(20), nullable=False, default="Gratuito")
     has_apple_watch = Column(Boolean, default=False)
 
-    habits = relationship("Habit", back_populates="owner")
+    habit_definitions = relationship(
+        "HabitDefinition", back_populates="owner", cascade="all, delete-orphan"
+    )
 
     # activities = relationship("PhysicalActivity", back_populates="user")
     # sleep_records = relationship("SleepRecord", back_populates="user")
@@ -60,7 +62,9 @@ class HabitDefinition(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="habit_definitions")
-    completions = relationship("HabitCompletion", back_populates="definition", cascade="all, delete-orphan")
+    completions = relationship(
+        "HabitCompletion", back_populates="definition", cascade="all, delete-orphan"
+    )
 
 
 class HabitCompletion(Base):
@@ -71,6 +75,7 @@ class HabitCompletion(Base):
     date = Column(Date, index=True)
 
     definition = relationship("HabitDefinition", back_populates="completions")
+
 
 class CoachQuestion(BaseModel):
     text: str
