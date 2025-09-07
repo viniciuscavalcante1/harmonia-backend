@@ -39,20 +39,6 @@ class User(Base):
     # sleep_records = relationship("SleepRecord", back_populates="user")
 
 
-class Habit(Base):
-    __tablename__ = "habits"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    icon = Column(String, index=True)
-    date = Column(Date, index=True)
-    is_completed = Column(Boolean, default=False)
-
-    user_id = Column(Integer, ForeignKey("users.id"))
-
-    owner = relationship("User", back_populates="habits")
-
-
 class HabitDefinition(Base):
     __tablename__ = "habit_definitions"
 
