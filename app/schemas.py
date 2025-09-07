@@ -38,7 +38,6 @@ class HabitHistory(BaseModel):
     completed_dates: List[date]
 
 
-
 class Habit(HabitBase):
     id: int
     user_id: int

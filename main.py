@@ -47,20 +47,34 @@ def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db))
 
 
 @app.post("/habits/{habit_def_id}/toggle", response_model=schemas.HabitStatus)
-def toggle_habit_completion(habit_def_id: int, date_str: str, db: Session = Depends(get_db)):
+def toggle_habit_completion(
+    habit_def_id: int, date_str: str, db: Session = Depends(get_db)
+):
     try:
         target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        raise HTTPException(status_code=400, detail="Formato de data inválido. Use AAAA-MM-DD.")
+        raise HTTPException(
+            status_code=400, detail="Formato de data inválido. Use AAAA-MM-DD."
+        )
 
-    habit_def = db.query(models.HabitDefinition).filter(models.HabitDefinition.id == habit_def_id).first()
+    habit_def = (
+        db.query(models.HabitDefinition)
+        .filter(models.HabitDefinition.id == habit_def_id)
+        .first()
+    )
     if not habit_def:
-        raise HTTPException(status_code=404, detail="Definição de hábito não encontrada")
+        raise HTTPException(
+            status_code=404, detail="Definição de hábito não encontrada"
+        )
 
-    completion = db.query(models.HabitCompletion).filter(
-        models.HabitCompletion.habit_id == habit_def_id,
-        models.HabitCompletion.date == target_date
-    ).first()
+    completion = (
+        db.query(models.HabitCompletion)
+        .filter(
+            models.HabitCompletion.habit_id == habit_def_id,
+            models.HabitCompletion.date == target_date,
+        )
+        .first()
+    )
 
     if completion:
         db.delete(completion)
@@ -77,7 +91,7 @@ def toggle_habit_completion(habit_def_id: int, date_str: str, db: Session = Depe
         user_id=habit_def.user_id,
         name=habit_def.name,
         icon=habit_def.icon,
-        is_completed=is_completed_now
+        is_completed=is_completed_now,
     )
 
 
@@ -108,7 +122,9 @@ def get_habit_history(habit_def_id: int, db: Session = Depends(get_db)):
 
     return schemas.HabitHistory(
         current_streak=current_streak,
-        completed_dates=sorted(list(completed_dates), reverse=True)  # Retorna as datas ordenadas
+        completed_dates=sorted(
+            list(completed_dates), reverse=True
+        ),  # Retorna as datas ordenadas
     )
 
 
@@ -156,14 +172,23 @@ def get_dashboard_data(user_id: int, date_str: str, db: Session = Depends(get_db
     try:
         target_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        raise HTTPException(status_code=400, detail="Formato de data inválido. Use AAAA-MM-DD.")
-    habit_definitions = db.query(models.HabitDefinition).filter(models.HabitDefinition.user_id == user_id).all()
+        raise HTTPException(
+            status_code=400, detail="Formato de data inválido. Use AAAA-MM-DD."
+        )
+    habit_definitions = (
+        db.query(models.HabitDefinition)
+        .filter(models.HabitDefinition.user_id == user_id)
+        .all()
+    )
 
     completed_today_ids = {
-        c.habit_id for c in db.query(models.HabitCompletion).filter(
+        c.habit_id
+        for c in db.query(models.HabitCompletion)
+        .filter(
             models.HabitCompletion.date == target_date,
-            models.HabitCompletion.definition.has(user_id=user_id)
-        ).all()
+            models.HabitCompletion.definition.has(user_id=user_id),
+        )
+        .all()
     }
 
     habits_status = [
@@ -172,8 +197,9 @@ def get_dashboard_data(user_id: int, date_str: str, db: Session = Depends(get_db
             user_id=definition.user_id,
             name=definition.name,
             icon=definition.icon,
-            is_completed=(definition.id in completed_today_ids)
-        ) for definition in habit_definitions
+            is_completed=(definition.id in completed_today_ids),
+        )
+        for definition in habit_definitions
     ]
 
     return schemas.DashboardDataResponse(
