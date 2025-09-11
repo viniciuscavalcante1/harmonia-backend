@@ -315,5 +315,18 @@ def create_or_update_journal_entry(
     return db_entry
 
 
+@app.get("/journal_entries/{user_id}", response_model=list[schemas.JournalEntry])
+def get_journal_entries(user_id: int, db: Session = Depends(get_db)):
+    entries = (
+        db.query(models.JournalEntry)
+        .filter(models.JournalEntry.user_id == user_id)
+        .order_by(models.JournalEntry.date.desc())
+        .all()
+    )
+    if not entries:
+        return []
+    return entries
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
