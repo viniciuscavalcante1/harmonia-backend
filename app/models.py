@@ -1,5 +1,17 @@
+import datetime
+
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, Date, Boolean, Float, func, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Date,
+    Boolean,
+    Float,
+    func,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -53,6 +65,22 @@ class HabitCompletion(Base):
     date = Column(Date, index=True)
 
     definition = relationship("HabitDefinition", back_populates="completions")
+
+
+class JournalEntry(Base):
+    __tablename__ = "journal_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    date = Column(Date, index=True, default=datetime.date.today)
+
+    mood = Column(String(50))
+
+    content = Column(String, nullable=True)
+
+    __table_args__ = (UniqueConstraint("user_id", "date", name="_user_date_uc"),)
+
+    owner = relationship("User")
 
 
 class CoachQuestion(BaseModel):

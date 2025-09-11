@@ -1,7 +1,9 @@
 # app/schemas.py
+from enum import Enum
+
 from pydantic import BaseModel, EmailStr
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 
 class HabitBase(BaseModel):
@@ -100,3 +102,28 @@ class SuggestionRequest(BaseModel):
 class HabitSuggestion(BaseModel):
     name: str
     icon: str
+
+
+class Mood(str, Enum):
+    feliz = "feliz"
+    bem = "bem"
+    neutro = "neutro"
+    mal = "mal"
+    triste = "triste"
+
+
+class JournalEntryCreate(BaseModel):
+    mood: Mood
+    content: Optional[str] = None
+    date: date
+
+
+class JournalEntry(BaseModel):
+    id: int
+    user_id: int
+    date: date
+    mood: Mood
+    content: Optional[str] = None
+
+    class Config:
+        from_attributes = True

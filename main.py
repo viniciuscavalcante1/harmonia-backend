@@ -285,5 +285,35 @@ def suggest_habits(request: SuggestionRequest):
         )
 
 
+@app.post("/users/{user_id}/journal", response_model=schemas.JournalEntry)
+def create_or_update_journal_entry(
+    user_id: int, entry: schemas.JournalEntryCreate, db: Session = Depends(get_db)
+):
+    db_entry = (
+        db.query(models.JournalEntry)
+        .filter(
+            models.JournalEntry.user_id == user_id,
+            models.JournalEntry.date == entry.date,
+        )
+        .first()
+    )
+
+    if db_entry:
+        db_entry.mood = entry.mood.value
+        db_entry.content = entry.content
+    else:
+        db_entry = models.JournalEntry(
+            user_id=user_id,
+            date=entry.date,
+            mood=entry.mood.value,
+            content=entry.content,
+        )
+        db.add(db_entry)
+
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
