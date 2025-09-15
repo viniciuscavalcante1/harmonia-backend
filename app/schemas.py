@@ -137,8 +137,10 @@ class ActivityBase(BaseModel):
     distance: float | None = None
     date: datetime
 
+
 class ActivityCreate(ActivityBase):
     owner_id: int
+
 
 class Activity(ActivityBase):
     id: int

@@ -5,7 +5,7 @@ from typing import List
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException
 from google.genai.types import GenerateContentConfig
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
 
@@ -29,11 +29,7 @@ def read_root():
 
 @app.post("/users/login", response_model=schemas.User)
 def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = (
-        db.query(models.User)
-        .filter(models.User.email == user.email)
-        .first()
-    )
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
     if db_user:
         return db_user
@@ -326,13 +322,18 @@ def get_journal_entries(user_id: int, db: Session = Depends(get_db)):
         return []
     return entries
 
+
 @app.post("/activities/", response_model=schemas.Activity)
 def create_activity(activity: schemas.ActivityCreate, db: Session = Depends(get_db)):
-    db_activity = models.ActivityLog(**activity.model_dump())
+    activity_data = activity.model_dump()
+    activity_data["activity_type"] = activity_data["activity_type"].value
+
+    db_activity = models.ActivityLog(**activity_data)
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
     return db_activity
+
 
 @app.post("/users/{user_id}/habits", response_model=schemas.HabitDefinition)
 def create_habit_definition(

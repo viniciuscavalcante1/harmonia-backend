@@ -11,7 +11,9 @@ from sqlalchemy import (
     Float,
     func,
     ForeignKey,
-    UniqueConstraint, Enum, DateTime,
+    UniqueConstraint,
+    Enum,
+    DateTime,
 )
 from sqlalchemy.orm import relationship
 
@@ -84,6 +86,7 @@ class JournalEntry(Base):
     __table_args__ = (UniqueConstraint("user_id", "date", name="_user_date_uc"),)
 
     owner = relationship("User")
+
 
 class ActivityTypeEnum(str, enum.Enum):
     running = "Corrida"
