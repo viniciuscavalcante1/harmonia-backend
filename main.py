@@ -330,6 +330,7 @@ def create_activity(activity: schemas.ActivityCreate, db: Session = Depends(get_
     activity_data["activity_type"] = ActivityTypeEnum(activity_data["activity_type"]).value
 
     db_activity = models.ActivityLog(**activity_data)
+    print(f"db_activity:", db_activity)
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
