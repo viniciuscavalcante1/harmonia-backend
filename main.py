@@ -327,16 +327,25 @@ def get_journal_entries(user_id: int, db: Session = Depends(get_db)):
 @app.post("/activities/", response_model=schemas.Activity)
 def create_activity(activity: schemas.ActivityCreate, db: Session = Depends(get_db)):
     activity_data = activity.model_dump()
-    activity_data['activity_type'] = activity.activity_type.value
-
-    print("activity_type_value:", activity.activity_type.value)
-    print("activity_type_enum: ", ActivityTypeEnum(activity_data["activity_type"]).value)
+    activity_data["activity_type"] = activity.activity_type.value
     db_activity = models.ActivityLog(**activity_data)
-    print(f"db_activity:", db_activity)
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
     return db_activity
+
+
+@app.get("/users/{user_id}/activities/", response_model=list[schemas.Activity])
+def read_user_activities(user_id: int, db: Session = Depends(get_db)):
+    activities = (
+        db.query(models.ActivityLog)
+        .filter(models.ActivityLog.owner_id == user_id)
+        .order_by(models.ActivityLog.date.desc())
+        .all()
+    )
+    if not activities:
+        return []
+    return activities
 
 
 @app.post("/users/{user_id}/habits", response_model=schemas.HabitDefinition)
