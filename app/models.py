@@ -107,6 +107,10 @@ class ActivityLog(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="activities")
 
+    def __str__(self):
+        return (f"activity_type: {self.activity_type}, date: {self.date},"
+                f" duration: {self.duration}, distance: {self.distance}")
+
 
 class CoachQuestion(BaseModel):
     text: str
