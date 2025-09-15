@@ -99,7 +99,7 @@ class ActivityLog(Base):
     __tablename__ = "activity_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    activity_type = Column(Enum(ActivityTypeEnum))
+    activity_type = Column(String, nullable=False)
     duration = Column(Float, nullable=False)
     distance = Column(Float, nullable=True)
     date = Column(DateTime, nullable=False)
@@ -110,6 +110,9 @@ class ActivityLog(Base):
     def __str__(self):
         return (f"activity_type: {self.activity_type}, date: {self.date},"
                 f" duration: {self.duration}, distance: {self.distance}")
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class CoachQuestion(BaseModel):
