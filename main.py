@@ -31,7 +31,6 @@ def read_root():
 def find_or_create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = (
         db.query(models.User)
-        .options(joinedload(models.User.habits))
         .filter(models.User.email == user.email)
         .first()
     )
