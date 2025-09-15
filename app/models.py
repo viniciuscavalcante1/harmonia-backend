@@ -1,4 +1,5 @@
 import datetime
+import enum
 
 from pydantic import BaseModel
 from sqlalchemy import (
@@ -10,7 +11,7 @@ from sqlalchemy import (
     Float,
     func,
     ForeignKey,
-    UniqueConstraint,
+    UniqueConstraint, Enum, DateTime,
 )
 from sqlalchemy.orm import relationship
 
@@ -38,6 +39,8 @@ class User(Base):
     habit_definitions = relationship(
         "HabitDefinition", back_populates="owner", cascade="all, delete-orphan"
     )
+
+    activities = relationship("ActivityLog", back_populates="owner")
 
     # activities = relationship("PhysicalActivity", back_populates="user")
     # sleep_records = relationship("SleepRecord", back_populates="user")
@@ -81,6 +84,25 @@ class JournalEntry(Base):
     __table_args__ = (UniqueConstraint("user_id", "date", name="_user_date_uc"),)
 
     owner = relationship("User")
+
+class ActivityTypeEnum(str, enum.Enum):
+    running = "Corrida"
+    walking = "Caminhada"
+    cycling = "Ciclismo"
+    strengthTraining = "Treino de Força"
+
+
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    activity_type = Column(Enum(ActivityTypeEnum))
+    duration = Column(Float, nullable=False)
+    distance = Column(Float, nullable=True)
+    date = Column(DateTime, nullable=False)
+
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner = relationship("User", back_populates="activities")
 
 
 class CoachQuestion(BaseModel):

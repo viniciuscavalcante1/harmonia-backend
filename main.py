@@ -326,6 +326,28 @@ def get_journal_entries(user_id: int, db: Session = Depends(get_db)):
         return []
     return entries
 
+@app.post("/activities/", response_model=schemas.Activity)
+def create_activity(activity: schemas.ActivityCreate, db: Session = Depends(get_db)):
+    db_activity = models.ActivityLog(**activity.model_dump())
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+@app.post("/users/{user_id}/habits", response_model=schemas.HabitDefinition)
+def create_habit_definition(
+    user_id: int, habit: schemas.HabitDefinitionCreate, db: Session = Depends(get_db)
+):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    db_habit_def = models.HabitDefinition(**habit.model_dump(), user_id=user_id)
+    db.add(db_habit_def)
+    db.commit()
+    db.refresh(db_habit_def)
+    return db_habit_def
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

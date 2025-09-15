@@ -2,8 +2,10 @@
 from enum import Enum
 
 from pydantic import BaseModel, EmailStr
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
+
+from app.models import ActivityTypeEnum
 
 
 class HabitBase(BaseModel):
@@ -127,3 +129,20 @@ class JournalEntry(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ActivityBase(BaseModel):
+    activity_type: ActivityTypeEnum
+    duration: float
+    distance: float | None = None
+    date: datetime
+
+class ActivityCreate(ActivityBase):
+    owner_id: int
+
+class Activity(ActivityBase):
+    id: int
+    owner_id: int
+
+    class Config:
+        orm_mode = True
