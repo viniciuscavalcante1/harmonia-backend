@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
 
+from app.models import ActivityTypeEnum
 from app.schemas import HabitSuggestion, SuggestionRequest
 
 app = FastAPI(title="Harmonia API")
@@ -326,7 +327,7 @@ def get_journal_entries(user_id: int, db: Session = Depends(get_db)):
 @app.post("/activities/", response_model=schemas.Activity)
 def create_activity(activity: schemas.ActivityCreate, db: Session = Depends(get_db)):
     activity_data = activity.model_dump()
-    activity_data["activity_type"] = activity_data["activity_type"].value
+    activity_data["activity_type"] = ActivityTypeEnum(activity_data["activity_type"]).value
 
     db_activity = models.ActivityLog(**activity_data)
     db.add(db_activity)
