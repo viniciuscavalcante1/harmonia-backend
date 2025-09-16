@@ -12,8 +12,8 @@ from sqlalchemy import (
     func,
     ForeignKey,
     UniqueConstraint,
-    Enum,
     DateTime,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -115,6 +115,36 @@ class ActivityLog(Base):
 
     def __repr__(self):
         return self.__str__()
+
+
+class NutritionLog(Base):
+    __tablename__ = "nutrition_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    log_date = Column(DateTime(timezone=True), nullable=False)
+    total_calories = Column(Float, nullable=False)
+    total_protein = Column(Float, nullable=False)
+    total_carbs = Column(Float, nullable=False)
+    total_fat = Column(Float, nullable=False)
+    insights = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    items = relationship("FoodItem", back_populates="log", cascade="all, delete-orphan")
+
+
+class FoodItem(Base):
+    __tablename__ = "food_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nutrition_log_id = Column(Integer, ForeignKey("nutrition_logs.id"))
+    food_name = Column(String, nullable=False)
+    calories = Column(Float, nullable=False)
+    protein = Column(Float, nullable=False)
+    carbs = Column(Float, nullable=False)
+    fat = Column(Float, nullable=False)
+
+    log = relationship("NutritionLog", back_populates="items")
 
 
 class CoachQuestion(BaseModel):

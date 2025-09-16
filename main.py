@@ -1,15 +1,15 @@
+import base64
 import datetime
 import json
 from typing import List
 
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from google.genai.types import GenerateContentConfig
 from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
 
-from app.models import ActivityTypeEnum
 from app.schemas import HabitSuggestion, SuggestionRequest
 
 app = FastAPI(title="Harmonia API")
@@ -361,6 +361,72 @@ def create_habit_definition(
     db.commit()
     db.refresh(db_habit_def)
     return db_habit_def
+
+
+@app.post("/nutrition/analyze-meal", response_model=schemas.NutritionAnalysisResponse)
+async def analyze_meal_image(image: UploadFile = File(...)):
+    image_bytes = await image.read()
+    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+    prompt = """
+    Analise a imagem de comida. Por favor, identifique cada item alimentar e estime a quantidade.
+    Para cada item, forneça uma estimativa de calorias, proteínas, carboidratos e gorduras.
+    Além disso, forneça um insight geral sobre a refeição (ex: "Refeição balanceada, rica em proteínas" 
+    ou "Pode ser alta em gorduras saturadas, considere uma porção menor na próxima vez.").
+
+    Retorne a resposta como um JSON válido no seguinte formato, sem nenhum texto antes ou depois:
+    {
+        "foods": [
+            {"food_name": "Nome do Alimento 1", "calories": 100, "protein": 10, "carbs": 15, "fat": 5},
+            {"food_name": "Nome do Alimento 2", "calories": 250, "protein": 5, "carbs": 30, "fat": 12}
+        ],
+        "insights": "Sua análise geral aqui...",
+        "total_calories": 350
+    }
+    """
+
+    try:
+        client = genai.Client()
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt, {"mime_type": "image/jpeg", "data": image_base64}],
+            config=GenerateContentConfig(response_mime_type="application/json"),
+        )
+
+        analysis_data = json.loads(response.text)
+        return analysis_data
+
+    except Exception as e:
+        print(f"Erro ao analisar a imagem: {e}")
+        raise HTTPException(
+            status_code=500, detail="Ocorreu um erro ao processar a imagem."
+        )
+
+
+@app.post("/nutrition", response_model=schemas.NutritionLog)
+def create_nutrition_log(
+    log_data: schemas.NutritionLogCreate, db: Session = Depends(get_db)
+):
+    db_log = models.NutritionLog(
+        user_id=log_data.user_id,
+        log_date=log_data.log_date,
+        total_calories=log_data.total_calories,
+        total_protein=log_data.total_protein,
+        total_carbs=log_data.total_carbs,
+        total_fat=log_data.total_fat,
+        insights=log_data.insights,
+    )
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+
+    for item_data in log_data.items:
+        db_item = models.FoodItem(**item_data.dict(), nutrition_log_id=db_log.id)
+        db.add(db_item)
+
+    db.commit()
+    db.refresh(db_log)
+    return db_log
 
 
 if __name__ == "__main__":

@@ -148,3 +148,52 @@ class Activity(ActivityBase):
 
     class Config:
         orm_mode = True
+
+
+class FoodItemBase(BaseModel):
+    food_name: str
+    calories: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+class FoodItemCreate(FoodItemBase):
+    pass
+
+
+class FoodItem(FoodItemBase):
+    id: int
+    nutrition_log_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class NutritionLogBase(BaseModel):
+    user_id: int
+    log_date: datetime
+    total_calories: float
+    total_protein: float
+    total_carbs: float
+    total_fat: float
+    insights: str | None = None
+
+
+class NutritionLogCreate(NutritionLogBase):
+    items: List[FoodItemCreate]
+
+
+class NutritionLog(NutritionLogBase):
+    id: int
+    created_at: datetime
+    items: List[FoodItem] = []
+
+    class Config:
+        orm_mode = True
+
+
+class NutritionAnalysisResponse(BaseModel):
+    foods: List[FoodItemBase]
+    insights: str
+    total_calories: float
