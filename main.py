@@ -1,11 +1,11 @@
-import base64
 import datetime
+import io
 import json
 from typing import List
 
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
-from google.genai.types import GenerateContentConfig, Part
+from google.genai.types import GenerateContentConfig, UploadFileConfig
 from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
@@ -366,12 +366,6 @@ def create_habit_definition(
 @app.post("/nutrition/analyze-meal", response_model=schemas.NutritionAnalysisResponse)
 async def analyze_meal_image(image: UploadFile = File(...)):
     image_bytes = await image.read()
-    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-
-    image_part = Part(
-        inline_data=image_bytes,
-        mime_type=image.content_type
-    )
 
     prompt = """
     Analise a imagem de comida. Por favor, identifique cada item alimentar e estime a quantidade.
@@ -390,24 +384,35 @@ async def analyze_meal_image(image: UploadFile = File(...)):
     }
     """
 
-    prompt_part = Part(text=prompt)
-
     try:
         client = genai.Client()
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[prompt_part, image_part],
-            config=GenerateContentConfig(response_mime_type="application/json"),
+        in_memory_file = io.BytesIO(image_bytes)
+
+        temp_file_name = f"temp_{image.filename}"
+
+        uploaded_file = client.files.upload(
+            file=in_memory_file,  # Passando o objeto BytesIO
+            config=UploadFileConfig(display_name=temp_file_name),
         )
 
+        print(f"Arquivo enviado com sucesso: {uploaded_file.name}")
+
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[uploaded_file, prompt],
+            config=GenerateContentConfig(response_mime_type="application/json"),
+        )
+        client.files.delete(name=uploaded_file.name)
+        print(f"Arquivo temporário deletado: {uploaded_file.name}")
+
         analysis_data = json.loads(response.text)
-        print(f"Gemini response: {analysis_data}")
+
         return analysis_data
 
     except Exception as e:
-        print(f"Erro ao analisar a imagem: {e}")
+        print(f"Erro detalhado ao chamar a API do Gemini: {e}")
         raise HTTPException(
-            status_code=500, detail="Ocorreu um erro ao processar a imagem."
+            status_code=500, detail="Ocorreu um erro ao processar a imagem com a IA."
         )
 
 
