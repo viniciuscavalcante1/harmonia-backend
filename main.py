@@ -5,7 +5,7 @@ from typing import List
 
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
-from google.genai.types import GenerateContentConfig
+from google.genai.types import GenerateContentConfig, Part
 from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
@@ -368,6 +368,11 @@ async def analyze_meal_image(image: UploadFile = File(...)):
     image_bytes = await image.read()
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
+    image_part = Part(
+        inline_data=image_bytes,
+        mime_type=image.content_type
+    )
+
     prompt = """
     Analise a imagem de comida. Por favor, identifique cada item alimentar e estime a quantidade.
     Para cada item, forneça uma estimativa de calorias, proteínas, carboidratos e gorduras.
@@ -385,15 +390,18 @@ async def analyze_meal_image(image: UploadFile = File(...)):
     }
     """
 
+    prompt_part = Part(text=prompt)
+
     try:
         client = genai.Client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=[prompt, {"mime_type": "image/jpeg", "data": image_base64}],
+            contents=[prompt_part, image_part],
             config=GenerateContentConfig(response_mime_type="application/json"),
         )
 
         analysis_data = json.loads(response.text)
+        print(f"Gemini response: {analysis_data}")
         return analysis_data
 
     except Exception as e:
