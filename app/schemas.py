@@ -1,7 +1,7 @@
 # app/schemas.py
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import date, datetime
 from typing import List, Optional
 
@@ -212,5 +212,4 @@ class WaterLog(WaterLogBase):
     user_id: int
     log_date: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
