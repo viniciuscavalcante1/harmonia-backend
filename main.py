@@ -348,7 +348,7 @@ def create_habit_definition(
         user_id=db_habit_def.user_id,
         name=db_habit_def.name,
         icon=db_habit_def.icon,
-        is_completed=False
+        is_completed=False,
     )
 
 
@@ -476,6 +476,44 @@ def delete_water_log(log_id: int, db: Session = Depends(get_db)):
     db.delete(db_log)
     db.commit()
     return {"ok": True}
+
+
+@app.post("/users/{user_id}/sleep", response_model=schemas.SleepLog)
+def create_sleep_log(
+    user_id: int, sleep_log: schemas.SleepLogCreate, db: Session = Depends(get_db)
+):
+    if sleep_log.end_time <= sleep_log.start_time:
+        raise HTTPException(
+            status_code=400,
+            detail="A hora de acordar deve ser depois da hora de dormir.",
+        )
+
+    duration_delta = sleep_log.end_time - sleep_log.start_time
+    duration_minutes = int(duration_delta.total_seconds() / 60)
+
+    sleep_data = sleep_log.model_dump()
+    if sleep_log.quality:
+        sleep_data["quality"] = sleep_log.quality.value
+
+    db_sleep_log = models.SleepLog(
+        **sleep_data, user_id=user_id, duration_minutes=duration_minutes
+    )
+
+    db.add(db_sleep_log)
+    db.commit()
+    db.refresh(db_sleep_log)
+    return db_sleep_log
+
+
+@app.get("/users/{user_id}/sleep", response_model=List[schemas.SleepLog])
+def read_sleep_logs(user_id: int, limit: int = 30, db: Session = Depends(get_db)):
+    return (
+        db.query(models.SleepLog)
+        .filter(models.SleepLog.user_id == user_id)
+        .order_by(models.SleepLog.start_time.desc())
+        .limit(limit)
+        .all()
+    )
 
 
 if __name__ == "__main__":

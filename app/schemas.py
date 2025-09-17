@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import date, datetime
 from typing import List, Optional
 
-from app.models import ActivityTypeEnum
+from app.models import ActivityTypeEnum, SleepQualityEnum
 
 
 class HabitBase(BaseModel):
@@ -211,5 +211,24 @@ class WaterLog(WaterLogBase):
     id: int
     user_id: int
     log_date: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SleepLogBase(BaseModel):
+    start_time: datetime
+    end_time: datetime
+    quality: Optional[SleepQualityEnum] = None
+
+
+class SleepLogCreate(SleepLogBase):
+    pass
+
+
+class SleepLog(SleepLogBase):
+    id: int
+    user_id: int
+    duration_minutes: int
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

@@ -158,3 +158,21 @@ class WaterLog(Base):
 
 class CoachQuestion(BaseModel):
     text: str
+
+
+class SleepQualityEnum(enum.Enum):
+    RUIM = "Ruim"
+    OK = "Ok"
+    BOM = "Bom"
+
+
+class SleepLog(Base):
+    __tablename__ = "sleep_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=False)
+    duration_minutes = Column(Integer, nullable=False)
+    quality = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
