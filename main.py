@@ -8,7 +8,7 @@ from google.genai.types import GenerateContentConfig, UploadFileConfig
 from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
-from datetime import date, datetime, time
+from datetime import date, time
 
 from app.schemas import HabitSuggestion, SuggestionRequest
 
@@ -445,8 +445,8 @@ def read_water_logs_for_user(
     if log_date is None:
         log_date = date.today()
 
-    start_of_day = datetime.combine(log_date, time.min)
-    end_of_day = datetime.combine(log_date, time.max)
+    start_of_day = datetime.datetime.combine(log_date, time.min)
+    end_of_day = datetime.datetime.combine(log_date, time.max)
 
     return (
         db.query(models.WaterLog)
