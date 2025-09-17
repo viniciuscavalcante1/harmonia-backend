@@ -435,7 +435,8 @@ def create_water_log_for_user(
     db.add(db_water_log)
     db.commit()
     db.refresh(db_water_log)
-    return db_water_log
+    response_log = schemas.WaterLog.from_orm(db_water_log)
+    return response_log
 
 
 @app.get("/users/{user_id}/water", response_model=List[schemas.WaterLog])
