@@ -197,3 +197,20 @@ class NutritionAnalysisResponse(BaseModel):
     foods: List[FoodItemBase]
     insights: str
     total_calories: float
+
+
+class WaterLogBase(BaseModel):
+    amount_ml: int
+
+
+class WaterLogCreate(WaterLogBase):
+    pass
+
+
+class WaterLog(WaterLogBase):
+    id: int
+    user_id: int
+    log_date: datetime
+
+    class Config:
+        orm_mode = True

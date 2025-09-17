@@ -1,4 +1,3 @@
-import datetime
 import io
 import json
 from typing import List
@@ -9,6 +8,7 @@ from google.genai.types import GenerateContentConfig, UploadFileConfig
 from sqlalchemy.orm import Session
 from app import models, database, schemas
 from google import genai
+from datetime import date, datetime, time
 
 from app.schemas import HabitSuggestion, SuggestionRequest
 
@@ -118,9 +118,7 @@ def get_habit_history(habit_def_id: int, db: Session = Depends(get_db)):
 
     return schemas.HabitHistory(
         current_streak=current_streak,
-        completed_dates=sorted(
-            list(completed_dates), reverse=True
-        ),  # Retorna as datas ordenadas
+        completed_dates=sorted(list(completed_dates), reverse=True),
     )
 
 
@@ -205,21 +203,6 @@ def get_dashboard_data(user_id: int, date_str: str, db: Session = Depends(get_db
         dailyInsight="Continue assim! A consistência é a chave para o sucesso.",
         habits=habits_status,
     )
-
-
-@app.post("/users/{user_id}/habits", response_model=schemas.HabitDefinition)
-def create_habit_definition(
-    user_id: int, habit: schemas.HabitDefinitionCreate, db: Session = Depends(get_db)
-):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-    db_habit_def = models.HabitDefinition(**habit.model_dump(), user_id=user_id)
-    db.add(db_habit_def)
-    db.commit()
-    db.refresh(db_habit_def)
-    return db_habit_def
 
 
 @app.get("/users/{user_id}", response_model=schemas.User)
@@ -392,7 +375,9 @@ async def analyze_meal_image(image: UploadFile = File(...)):
 
         uploaded_file = client.files.upload(
             file=in_memory_file,
-            config=UploadFileConfig(display_name=temp_file_name, mime_type="image/jpeg"),
+            config=UploadFileConfig(
+                display_name=temp_file_name, mime_type="image/jpeg"
+            ),
         )
 
         print(f"Arquivo enviado com sucesso: {uploaded_file.name}")
@@ -440,6 +425,50 @@ def create_nutrition_log(
     db.commit()
     db.refresh(db_log)
     return db_log
+
+
+@app.post("/users/{user_id}/water", response_model=schemas.WaterLog)
+def create_water_log_for_user(
+    user_id: int, water_log: schemas.WaterLogCreate, db: Session = Depends(get_db)
+):
+    db_water_log = models.WaterLog(**water_log.dict(), user_id=user_id)
+    db.add(db_water_log)
+    db.commit()
+    db.refresh(db_water_log)
+    return db_water_log
+
+
+@app.get("/users/{user_id}/water", response_model=List[schemas.WaterLog])
+def read_water_logs_for_user(
+    user_id: int, log_date: date = None, db: Session = Depends(get_db)
+):
+    if log_date is None:
+        log_date = date.today()
+
+    start_of_day = datetime.combine(log_date, time.min)
+    end_of_day = datetime.combine(log_date, time.max)
+
+    return (
+        db.query(models.WaterLog)
+        .filter(
+            models.WaterLog.user_id == user_id,
+            models.WaterLog.log_date >= start_of_day,
+            models.WaterLog.log_date <= end_of_day,
+        )
+        .order_by(models.WaterLog.log_date.desc())
+        .all()
+    )
+
+
+@app.delete("/water/{log_id}", status_code=204)
+def delete_water_log(log_id: int, db: Session = Depends(get_db)):
+    db_log = db.query(models.WaterLog).filter(models.WaterLog.id == log_id).first()
+    if db_log is None:
+        raise HTTPException(status_code=404, detail="Registro de água não encontrado")
+
+    db.delete(db_log)
+    db.commit()
+    return {"ok": True}
 
 
 if __name__ == "__main__":

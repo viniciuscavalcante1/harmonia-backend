@@ -147,5 +147,14 @@ class FoodItem(Base):
     log = relationship("NutritionLog", back_populates="items")
 
 
+class WaterLog(Base):
+    __tablename__ = "water_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    amount_ml = Column(Integer, nullable=False)
+    log_date = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoachQuestion(BaseModel):
     text: str
