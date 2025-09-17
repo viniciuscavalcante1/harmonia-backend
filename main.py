@@ -331,7 +331,7 @@ def read_user_activities(user_id: int, db: Session = Depends(get_db)):
     return activities
 
 
-@app.post("/users/{user_id}/habits", response_model=schemas.HabitDefinition)
+@app.post("/users/{user_id}/habits", response_model=schemas.HabitStatus)
 def create_habit_definition(
     user_id: int, habit: schemas.HabitDefinitionCreate, db: Session = Depends(get_db)
 ):
