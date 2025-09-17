@@ -75,10 +75,10 @@ class SleepData(BaseModel):
 
 
 class DashboardDataResponse(BaseModel):
-    userName: str
+    user_name: str
     activity: ActivityData
     sleep: SleepData
-    dailyInsight: str
+    daily_insight: str
     habits: List[HabitStatus] = []
 
 
