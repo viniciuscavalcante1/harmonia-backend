@@ -232,3 +232,19 @@ class SleepLog(SleepLogBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WeightLogBase(BaseModel):
+    weight_kg: float
+
+
+class WeightLogCreate(WeightLogBase):
+    pass
+
+
+class WeightLog(WeightLogBase):
+    id: int
+    user_id: int
+    log_date: datetime
+
+    model_config = ConfigDict(from_attributes=True)

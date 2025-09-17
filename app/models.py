@@ -176,3 +176,12 @@ class SleepLog(Base):
     duration_minutes = Column(Integer, nullable=False)
     quality = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class WeightLog(Base):
+    __tablename__ = "weight_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    weight_kg = Column(Float, nullable=False)
+    log_date = Column(DateTime(timezone=True), server_default=func.now())

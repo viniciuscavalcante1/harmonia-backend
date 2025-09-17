@@ -516,5 +516,26 @@ def read_sleep_logs(user_id: int, limit: int = 30, db: Session = Depends(get_db)
     )
 
 
+@app.post("/users/{user_id}/weight", response_model=schemas.WeightLog)
+def create_weight_log(
+    user_id: int, weight_log: schemas.WeightLogCreate, db: Session = Depends(get_db)
+):
+    db_weight_log = models.WeightLog(**weight_log.model_dump(), user_id=user_id)
+    db.add(db_weight_log)
+    db.commit()
+    db.refresh(db_weight_log)
+    return db_weight_log
+
+
+@app.get("/users/{user_id}/weight", response_model=List[schemas.WeightLog])
+def read_weight_logs(user_id: int, db: Session = Depends(get_db)):
+    return (
+        db.query(models.WeightLog)
+        .filter(models.WeightLog.user_id == user_id)
+        .order_by(models.WeightLog.log_date.desc())
+        .all()
+    )
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
