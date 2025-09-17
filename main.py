@@ -391,8 +391,8 @@ async def analyze_meal_image(image: UploadFile = File(...)):
         temp_file_name = f"temp_{image.filename}"
 
         uploaded_file = client.files.upload(
-            file=in_memory_file,  # Passando o objeto BytesIO
-            config=UploadFileConfig(display_name=temp_file_name),
+            file=in_memory_file,
+            config=UploadFileConfig(display_name=temp_file_name, mime_type="image/jpeg"),
         )
 
         print(f"Arquivo enviado com sucesso: {uploaded_file.name}")
