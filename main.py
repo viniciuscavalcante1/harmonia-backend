@@ -343,7 +343,13 @@ def create_habit_definition(
     db.add(db_habit_def)
     db.commit()
     db.refresh(db_habit_def)
-    return db_habit_def
+    return schemas.HabitStatus(
+        id=db_habit_def.id,
+        user_id=db_habit_def.user_id,
+        name=db_habit_def.name,
+        icon=db_habit_def.icon,
+        is_completed=False
+    )
 
 
 @app.post("/nutrition/analyze-meal", response_model=schemas.NutritionAnalysisResponse)
