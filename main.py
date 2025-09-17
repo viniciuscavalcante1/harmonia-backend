@@ -197,10 +197,10 @@ def get_dashboard_data(user_id: int, date_str: str, db: Session = Depends(get_db
     ]
 
     return schemas.DashboardDataResponse(
-        userName=db_user.name.split(" ")[0],
+        user_name=db_user.name.split(" ")[0],
         activity=schemas.ActivityData(steps=7890),
         sleep=schemas.SleepData(duration="5h42min"),
-        dailyInsight="Continue assim! A consistência é a chave para o sucesso.",
+        daily_insight="Continue assim! A consistência é a chave para o sucesso.",
         habits=habits_status,
     )
 
